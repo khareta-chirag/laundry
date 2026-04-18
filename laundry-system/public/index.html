@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🧺 LaundryPro – Order Management</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+  header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white; padding: 16px 24px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header span { font-size: 1.8rem; }
+
+  nav {
+    background: white; border-bottom: 1px solid var(--border);
+    display: flex; gap: 4px; padding: 8px 16px; overflow-x: auto;
+  }
+  nav button {
+    padding: 8px 18px; border: none; background: none; cursor: pointer;
+    border-radius: 8px; font-weight: 500; color: var(--muted); transition: all 0.15s;
+    white-space: nowrap;
+  }
+  nav button.active { background: var(--primary-light); color: var(--primary); }
+  nav button:hover:not(.active) { background: var(--bg); }
+
+  main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+  label { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  input, select {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.95rem; outline: none; transition: border 0.15s;
+    background: white;
+  }
+  input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600;
+    cursor: pointer; font-size: 0.9rem; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-danger { background: var(--danger); color: white; font-size: 0.8rem; padding: 6px 12px; }
+  .btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+
+  .garments-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .garment-row {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .garment-row select, .garment-row input { flex: 1; padding: 6px 10px; font-size: 0.88rem; }
+  .price-tag { font-size: 0.82rem; color: var(--success); font-weight: 600; min-width: 60px; text-align: right; }
+
+  .bill-preview {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1px solid #86efac; border-radius: 10px;
+    padding: 14px 18px; margin-top: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .bill-preview strong { font-size: 1.3rem; color: var(--success); }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .stat-card .value { font-size: 2rem; font-weight: 800; }
+  .stat-card .label { font-size: 0.82rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Order table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: var(--bg); padding: 10px 14px; text-align: left; font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:hover td { background: #fafbff; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .badge-RECEIVED  { background: #dbeafe; color: #1d4ed8; }
+  .badge-PROCESSING { background: #fef3c7; color: #b45309; }
+  .badge-READY     { background: #d1fae5; color: #065f46; }
+  .badge-DELIVERED { background: #e0e7ff; color: #3730a3; }
+
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters input, .filters select { flex: 1; min-width: 140px; }
+
+  .alert {
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;
+    font-size: 0.9rem; display: none;
+  }
+  .alert.show { display: block; }
+  .alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+  .alert-error   { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+
+  .empty-state { text-align: center; padding: 48px; color: var(--muted); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* Status update select in table */
+  .status-select {
+    padding: 5px 8px; border-radius: 6px; font-size: 0.82rem;
+    border: 1px solid var(--border); background: white; cursor: pointer;
+  }
+
+  @media (max-width: 600px) {
+    .form-row { flex-direction: column; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🧺</span>
+  <h1>LaundryPro — Order Management System</h1>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  <button onclick="switchTab('create')">➕ New Order</button>
+  <button onclick="switchTab('orders')">📋 All Orders</button>
+  <button onclick="switchTab('prices')">💰 Price List</button>
+</nav>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="section active">
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="value" id="s-total">—</div><div class="label">Total Orders</div></div>
+      <div class="stat-card"><div class="value" id="s-revenue" style="color:var(--success)">—</div><div class="label">Total Revenue</div></div>
+      <div class="stat-card"><div class="value" id="s-received" style="color:#1d4ed8">—</div><div class="label">Received</div></div>
+      <div class="stat-card"><div class="value" id="s-processing" style="color:var(--warning)">—</div><div class="label">Processing</div></div>
+      <div class="stat-card"><div class="value" id="s-ready" style="color:var(--success)">—</div><div class="label">Ready</div></div>
+      <div class="stat-card"><div class="value" id="s-delivered" style="color:var(--primary)">—</div><div class="label">Delivered</div></div>
+    </div>
+    <div class="card">
+      <h2>🕐 Recent Orders</h2>
+      <div class="table-wrap">
+        <table id="recent-table">
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="recent-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE ORDER -->
+  <div id="tab-create" class="section">
+    <div class="card">
+      <h2>➕ Create New Order</h2>
+      <div id="create-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" id="c-name" placeholder="e.g. Rahul Sharma" />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="c-phone" placeholder="e.g. 9876543210" />
+        </div>
+      </div>
+      <label style="margin-bottom:8px;display:block;font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Garments</label>
+      <div class="garments-list" id="garments-list"></div>
+      <button class="btn btn-sm" onclick="addGarmentRow()" style="background:var(--primary-light);color:var(--primary);border:1px dashed var(--primary)">+ Add Garment</button>
+      <div class="bill-preview" id="bill-preview" style="display:none">
+        <span>Estimated Bill</span>
+        <strong id="bill-amount">₹0</strong>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="submitOrder()">🧾 Create Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL ORDERS -->
+  <div id="tab-orders" class="section">
+    <div class="card">
+      <h2>📋 All Orders</h2>
+      <div class="filters">
+        <input type="text" id="f-search" placeholder="Search by name or phone…" oninput="loadOrders()" />
+        <select id="f-status" onchange="loadOrders()">
+          <option value="">All Statuses</option>
+          <option>RECEIVED</option><option>PROCESSING</option>
+          <option>READY</option><option>DELIVERED</option>
+        </select>
+        <input type="text" id="f-garment" placeholder="Filter by garment…" oninput="loadOrders()" />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Garments</th><th>Bill</th><th>Status</th><th>Delivery</th><th>Update</th></tr></thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+      </div>
+      <div id="orders-empty" class="empty-state" style="display:none">
+        <div class="icon">📭</div>
+        <p>No orders found</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICE LIST -->
+  <div id="tab-prices" class="section">
+    <div class="card">
+      <h2>💰 Service Price List</h2>
+      <table>
+        <thead><tr><th>Garment</th><th>Price per piece</th></tr></thead>
+        <tbody id="prices-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = "";  // same origin
+const PRICES_MAP = {};
+
+// ── Tab switching ─────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  event.target.classList.add("active");
+  if (name === "dashboard") loadDashboard();
+  if (name === "orders") loadOrders();
+  if (name === "prices") loadPrices();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const d = await fetch("/dashboard").then(r => r.json());
+  document.getElementById("s-total").textContent = d.totalOrders;
+  document.getElementById("s-revenue").textContent = "₹" + d.totalRevenue.toLocaleString();
+  document.getElementById("s-received").textContent = d.ordersPerStatus.RECEIVED;
+  document.getElementById("s-processing").textContent = d.ordersPerStatus.PROCESSING;
+  document.getElementById("s-ready").textContent = d.ordersPerStatus.READY;
+  document.getElementById("s-delivered").textContent = d.ordersPerStatus.DELIVERED;
+
+  const tbody = document.getElementById("recent-body");
+  tbody.innerHTML = d.recentOrders.length
+    ? d.recentOrders.map(o => `
+        <tr>
+          <td><code>${o.id}</code></td>
+          <td>${o.customerName}</td>
+          <td>₹${o.totalBill}</td>
+          <td><span class="badge badge-${o.status}">${o.status}</span></td>
+        </tr>`).join("")
+    : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No orders yet</td></tr>`;
+}
+
+// ── Create Order ──────────────────────────────────────────────────────────
+function addGarmentRow() {
+  const list = document.getElementById("garments-list");
+  const garmentOptions = Object.keys(PRICES_MAP).map(g => `<option value="${g}">${g}</option>`).join("");
+  const row = document.createElement("div");
+  row.className = "garment-row";
+  row.innerHTML = `
+    <select onchange="updateBill()">${garmentOptions}</select>
+    <input type="number" value="1" min="1" max="50" placeholder="Qty" style="max-width:70px" oninput="updateBill()"/>
+    <span class="price-tag" id="pt-${list.children.length}">₹0</span>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();updateBill()">✕</button>`;
+  list.appendChild(row);
+  updateBill();
+}
+
+function updateBill() {
+  const rows = document.querySelectorAll(".garment-row");
+  let total = 0;
+  rows.forEach((row, i) => {
+    const name = row.querySelector("select").value;
+    const qty = parseInt(row.querySelector("input").value) || 1;
+    const price = PRICES_MAP[name] || 0;
+    const sub = price * qty;
+    total += sub;
+    const tag = row.querySelector(".price-tag");
+    if (tag) tag.textContent = "₹" + sub;
+  });
+  const preview = document.getElementById("bill-preview");
+  if (rows.length > 0) {
+    preview.style.display = "flex";
+    document.getElementById("bill-amount").textContent = "₹" + total.toLocaleString();
+  } else {
+    preview.style.display = "none";
+  }
+}
+
+async function submitOrder() {
+  const name = document.getElementById("c-name").value.trim();
+  const phone = document.getElementById("c-phone").value.trim();
+  const rows = document.querySelectorAll(".garment-row");
+
+  if (!name || !phone) return showAlert("create-alert", "error", "Please enter customer name and phone.");
+  if (!rows.length) return showAlert("create-alert", "error", "Please add at least one garment.");
+
+  const garments = Array.from(rows).map(row => ({
+    name: row.querySelector("select").value,
+    quantity: parseInt(row.querySelector("input").value) || 1
+  }));
+
+  const res = await fetch("/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName: name, phone, garments })
+  });
+  const data = await res.json();
+
+  if (res.ok) {
+    showAlert("create-alert", "success", `✅ Order created! ID: ${data.order.id} | Bill: ₹${data.order.totalBill} | Est. delivery: ${data.order.estimatedDelivery}`);
+    document.getElementById("c-name").value = "";
+    document.getElementById("c-phone").value = "";
+    document.getElementById("garments-list").innerHTML = "";
+    document.getElementById("bill-preview").style.display = "none";
+  } else {
+    showAlert("create-alert", "error", data.error);
+  }
+}
+
+// ── Orders List ───────────────────────────────────────────────────────────
+async function loadOrders() {
+  const search = document.getElementById("f-search")?.value || "";
+  const status = document.getElementById("f-status")?.value || "";
+  const garment = document.getElementById("f-garment")?.value || "";
+
+  let url = "/orders?";
+  if (search) url += `search=${encodeURIComponent(search)}&`;
+  if (status) url += `status=${status}&`;
+  if (garment) url += `garment=${encodeURIComponent(garment)}&`;
+
+  const data = await fetch(url).then(r => r.json());
+  const tbody = document.getElementById("orders-body");
+  const empty = document.getElementById("orders-empty");
+
+  if (!data.orders.length) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  tbody.innerHTML = data.orders.map(o => `
+    <tr>
+      <td><code style="font-size:0.82rem">${o.id}</code></td>
+      <td>${o.customerName}</td>
+      <td>${o.phone}</td>
+      <td>${o.garments.map(g => `${g.name}×${g.quantity}`).join(", ")}</td>
+      <td><strong>₹${o.totalBill}</strong></td>
+      <td><span class="badge badge-${o.status}">${o.status}</span></td>
+      <td>${o.estimatedDelivery}</td>
+      <td>
+        <select class="status-select" onchange="updateStatus('${o.id}', this.value)">
+          ${["RECEIVED","PROCESSING","READY","DELIVERED"].map(s =>
+            `<option value="${s}" ${s===o.status?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </td>
+    </tr>`).join("");
+}
+
+async function updateStatus(id, status) {
+  await fetch(`/orders/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status })
+  });
+  loadOrders();
+  loadDashboard();
+}
+
+// ── Prices ────────────────────────────────────────────────────────────────
+async function loadPrices() {
+  const data = await fetch("/prices").then(r => r.json());
+  Object.assign(PRICES_MAP, data.prices);
+  document.getElementById("prices-body").innerHTML = Object.entries(data.prices)
+    .map(([g, p]) => `<tr><td>${g}</td><td><strong>₹${p}</strong></td></tr>`).join("");
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+  setTimeout(() => el.classList.remove("show"), 6000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  await loadPrices();
+  await loadDashboard();
+}
+init();
+</script>
+</body>
+</html>
